@@ -1,0 +1,18 @@
+Ananya Reddy
+
+Software Engineer
+
+Email: ananya.reddy@gmail.com
+Phone: +91 98765 43210
+
+Location:
+Hyderabad, Telangana, India
+
+Skills:
+Python
+SQL
+AWS
+Docker
+
+Experience:
+Software Engineer with 4 years of experience developing backend applications using Python, SQL, AWS, and Docker.

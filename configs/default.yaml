@@ -1,0 +1,22 @@
+# ── Candidate Data Transformer – Default Configuration ───────────────────────
+
+# Deduplication
+fuzzy_threshold: 88         # rapidfuzz WRatio score (0–100); records >= this are merged
+
+# Phone normalization
+default_country: "IN"       # ISO 3166-1 alpha-2 fallback region for phonenumbers
+
+# Date normalization
+date_formats:               # Hints passed to dateutil.parser in order
+  - "%d/%m/%Y"
+  - "%d-%m-%Y"
+  - "%Y-%m-%d"
+  - "%B %d, %Y"
+
+# Output
+output_dir: "output/"
+output_filename: "candidates_unified.jsonl"
+
+# Logging
+log_level: "INFO"           # DEBUG | INFO | WARNING | ERROR
+log_format: "json"          # json (production) | pretty (development)

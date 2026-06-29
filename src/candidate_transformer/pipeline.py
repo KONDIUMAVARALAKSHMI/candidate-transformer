@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import structlog
 from pydantic import ValidationError
 
 from candidate_transformer.confidence import apply_confidence
@@ -14,6 +15,7 @@ from candidate_transformer.parsers.json_parser import parse_json
 from candidate_transformer.parsers.pdf_parser import parse_pdf
 from candidate_transformer.projector import ProjectionConfig, load_projection_config, project_record
 from candidate_transformer.schemas import CandidateRecord
+from candidate_transformer.utils.logging import configure_logging
 
 
 def run_pipeline(
@@ -30,9 +32,38 @@ def run_pipeline(
     if not isinstance(settings, AppConfig):
         settings = load_config(config)
 
-    csv_records: list[dict[str, Any]] = parse_csv(csv_path) if csv_path else []
-    ats_records: list[dict[str, Any]] = parse_json(ats_path) if ats_path else []
-    resume_records: list[dict[str, Any]] = parse_pdf(resume_path) if resume_path else []
+    # Initialize structured logger
+    configure_logging(level=settings.log_level, format_type=settings.log_format)
+    logger = structlog.get_logger("candidate_transformer.pipeline")
+
+    logger.info(
+        "Starting candidate transformation pipeline",
+        csv_path=str(csv_path) if csv_path else None,
+        ats_path=str(ats_path) if ats_path else None,
+        resume_path=str(resume_path) if resume_path else None,
+    )
+
+    csv_records: list[dict[str, Any]] = []
+    if csv_path:
+        csv_records = parse_csv(csv_path)
+        logger.debug("Parsed CSV records", count=len(csv_records))
+
+    ats_records: list[dict[str, Any]] = []
+    if ats_path:
+        ats_records = parse_json(ats_path)
+        logger.debug("Parsed ATS JSON records", count=len(ats_records))
+
+    resume_records: list[dict[str, Any]] = []
+    if resume_path:
+        resume_records = parse_pdf(resume_path)
+        logger.debug("Parsed resume records", count=len(resume_records))
+
+    logger.info(
+        "Merging profiles from all sources",
+        csv_count=len(csv_records),
+        ats_count=len(ats_records),
+        resume_count=len(resume_records),
+    )
 
     merged = merge_candidates(
         csv_records=csv_records,
@@ -41,6 +72,7 @@ def run_pipeline(
         default_country=settings.default_country,
         date_formats=settings.date_formats,
     )
+    logger.info("Successfully merged source candidate profiles", merged_count=len(merged))
 
     runtime_projection_config = (
         load_projection_config(projection_config)
@@ -68,7 +100,17 @@ def run_pipeline(
             candidate = apply_confidence(record)
             candidate = CandidateRecord.model_validate(candidate.model_dump())
             projected = project_record(candidate, runtime_projection_config)
+            logger.debug(
+                "Validated and projected candidate record",
+                name=candidate.full_name,
+                confidence=candidate.overall_confidence,
+            )
         except (ValidationError, ValueError) as exc:
+            logger.error(
+                "Candidate record validation failed",
+                name=record.full_name or "unknown",
+                error=str(exc),
+            )
             raise ValueError(f"Validation failed for candidate {record.full_name or 'unknown'}: {exc}") from exc
 
         validated_records.append(candidate)
@@ -79,4 +121,6 @@ def run_pipeline(
         json.dump(payload, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
 
+    logger.info("Wrote unified candidate output file", output_path=str(output))
     return validated_records
+

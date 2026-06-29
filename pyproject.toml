@@ -1,0 +1,27 @@
+[project]
+name = "candidate-transformer"
+version = "0.1.0"
+description = "Multi-Source Candidate Data Transformer"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[project.scripts]
+candidate-transform = "candidate_transformer.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src/candidate_transformer --cov-report=term-missing -v"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["candidate_transformer"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true

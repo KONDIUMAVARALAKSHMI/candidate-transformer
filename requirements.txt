@@ -1,0 +1,19 @@
+# ── Runtime ──────────────────────────────────────────────────────────────────
+typer[all]==0.12.3          # CLI framework (includes rich for pretty output)
+pydantic==2.7.1             # Schema definition and validation
+pydantic-settings==2.3.1    # Settings management via env / YAML
+pandas==2.2.2               # CSV ingestion and tabular data manipulation
+pdfplumber==0.11.1          # PDF text and table extraction
+phonenumbers==8.13.37       # Phone number parsing and E.164 normalization
+python-dateutil==2.9.0.post0 # Flexible date string parsing
+rapidfuzz==3.9.3            # Fast fuzzy string matching (Levenshtein / token sort)
+PyYAML==6.0.1               # YAML config file loading
+structlog==24.2.0           # Structured JSON-friendly logging
+
+# ── Dev / Test ────────────────────────────────────────────────────────────────
+pytest==8.2.1
+pytest-cov==5.0.0
+pytest-mock==3.14.0
+ruff==0.4.7                 # Linter + formatter (replaces flake8 + black)
+mypy==1.10.0                # Static type checking
+pre-commit==3.7.1           # Git hooks for lint / format on commit

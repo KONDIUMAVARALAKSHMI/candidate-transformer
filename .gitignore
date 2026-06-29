@@ -64,11 +64,8 @@ dmypy.json
 secrets/
 
 # ─────────────────────────────────────────────────────────────
-# Project Inputs (SENSITIVE DATA ONLY)
-# ─────────────────────────────────────────────────────────────
-inputs/recruiter.csv
-inputs/resume.txt
-inputs/ats.json
+# Project inputs (ignore entire folder)
+inputs/
 
 # ─────────────────────────────────────────────────────────────
 # Outputs / Logs

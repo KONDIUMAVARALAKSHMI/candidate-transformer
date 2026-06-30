@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 from pathlib import Path
 
@@ -29,11 +30,11 @@ except Exception:
 @app.command("run")
 def run(
     csv: str = typer.Option(None, "--csv", help="Path to CSV file"),
-    ats: Path | None = typer.Option(None, "--ats", help="Path to ATS JSON file"),
-    resume: Path | None = typer.Option(None, "--resume", help="Path to resume file"),
-    config: Path | None = typer.Option(None, "--config", help="Path to config YAML"),
-    output: Path | None = typer.Option(None, "--output", help="Output JSONL path"),
-    projection_config: Path | None = typer.Option(
+    ats: Optional[Path] = typer.Option(None, "--ats", help="Path to ATS JSON file"),
+    resume: Optional[Path] = typer.Option(None, "--resume", help="Path to resume file"),
+    config: Optional[Path] = typer.Option(None, "--config", help="Path to config YAML"),
+    output: Optional[Path] = typer.Option(None, "--output", help="Output JSONL path"),
+    projection_config: Optional[Path] = typer.Option(
         None,
         "--projection-config",
         help="Path to projection config JSON",

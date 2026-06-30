@@ -389,9 +389,11 @@ def _candidate_key(candidate: CandidateRecord) -> str:
     if candidate.links.portfolio:
         return f"url:{candidate.links.portfolio.lower()}"
     if candidate.full_name:
-        normalized_name = normalize_name(candidate.full_name).lower()
+        normalized = normalize_name(candidate.full_name)
+        normalized_name = normalized.lower() if normalized else ""
         if candidate.experience and candidate.experience[0].company:
-            company_name = normalize_name(candidate.experience[0].company).lower()
+            company = normalize_name(candidate.experience[0].company)
+            company_name = company.lower() if company else ""
             return f"name-company:{normalized_name}|{company_name}"
         return f"name:{normalized_name}"
     return "unknown"

@@ -125,6 +125,7 @@ def _resolve_field(record: CandidateRecord, field_name: str) -> Any:
 
     # Handle array index lookup (e.g., emails[0])
     import re
+
     match = re.match(r"^(\w+)\[(\d+)\]$", field_name)
     if match:
         base = match.group(1)
@@ -161,7 +162,6 @@ def _resolve_field(record: CandidateRecord, field_name: str) -> Any:
     if field_name == "education":
         return [item.model_dump() for item in record.education]
     return None
-
 
 
 def _normalize_for_projection(field_name: str, value: Any) -> Any:

@@ -58,20 +58,20 @@ def normalize_country(value: str | None) -> str | None:
 
     # Try pycountry if installed for broader name support
     try:
-        import pycountry  # type: ignore
+        import pycountry
 
         try:
             country = pycountry.countries.lookup(v)
-            return country.alpha_2
+            return str(country.alpha_2)
         except Exception:
             # fallback: attempt exact name / official_name matches
             for c in pycountry.countries:
                 name = getattr(c, "name", "")
                 official = getattr(c, "official_name", "")
                 if name and name.lower() == lowered:
-                    return c.alpha_2
+                    return str(c.alpha_2)
                 if official and official.lower() == lowered:
-                    return c.alpha_2
+                    return str(c.alpha_2)
     except Exception:
         # pycountry not available or lookup failed; continue
         pass

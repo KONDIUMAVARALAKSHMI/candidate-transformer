@@ -28,7 +28,7 @@ def run_pipeline(
 ) -> list[CandidateRecord]:
     """Run the transformation pipeline from source files to validated JSONL output."""
 
-    settings = load_config(config) if isinstance(config, (str, Path)) or config is None else config
+    settings = load_config(config) if isinstance(config, str | Path) or config is None else config
     if not isinstance(settings, AppConfig):
         settings = load_config(config)
 
@@ -76,7 +76,7 @@ def run_pipeline(
 
     runtime_projection_config = (
         load_projection_config(projection_config)
-        if isinstance(projection_config, (str, Path))
+        if isinstance(projection_config, str | Path)
         else projection_config
     )
     if runtime_projection_config is None:

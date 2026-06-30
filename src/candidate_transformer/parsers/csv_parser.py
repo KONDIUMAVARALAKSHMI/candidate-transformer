@@ -23,7 +23,7 @@ def parse_csv(path: str | Path) -> list[dict[str, Any]]:
         for row in reader:
             cleaned_row: dict[str, Any] = {}
             for index, key in enumerate(normalized_headers):
-                cleaned_value = None if index >= len(row) else str(row[index]).strip()
+                cleaned_value: Any = None if index >= len(row) else str(row[index]).strip()
 
                 if key.lower() == "skills" and cleaned_value:
                     if index == len(normalized_headers) - 1 and len(row) > len(normalized_headers):
@@ -43,7 +43,7 @@ def _split_skills(value: str) -> list[str]:
     if not value:
         return []
 
-    parts = []
+    parts: list[str] = []
     for raw_part in value.replace(";", ",").split(","):
         cleaned = raw_part.strip()
         if not cleaned:

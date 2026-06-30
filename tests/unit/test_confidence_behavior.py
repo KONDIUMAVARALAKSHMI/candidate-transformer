@@ -1,4 +1,3 @@
-
 from candidate_transformer.confidence import (
     apply_confidence,
     compute_field_confidences,

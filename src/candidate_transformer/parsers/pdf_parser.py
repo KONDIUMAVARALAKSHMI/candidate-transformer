@@ -5,8 +5,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+pdfplumber: Any
 try:
-    import pdfplumber  # type: ignore
+    import pdfplumber
 except ImportError:  # pragma: no cover - optional dependency
     pdfplumber = SimpleNamespace(open=None)
 

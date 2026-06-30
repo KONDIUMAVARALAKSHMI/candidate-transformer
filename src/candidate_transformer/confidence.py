@@ -66,7 +66,6 @@ def compute_field_confidences(
     return confidences
 
 
-
 def compute_overall_confidence(
     record: CandidateRecord,
     source_weights: dict[str, float] | None = None,

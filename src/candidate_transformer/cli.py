@@ -12,6 +12,7 @@ app = typer.Typer(
     help="Transform candidate records",
 )
 
+
 @app.command("run")
 def run(
     csv: Path | None = typer.Option(None, "--csv", help="Path to CSV file"),
@@ -45,6 +46,7 @@ def run(
 
     output_path = output or "output/candidates_unified.jsonl"
     typer.echo(f"Wrote {len(records)} candidate record(s) to {output_path}")
+
 
 if __name__ == "__main__":
     app()

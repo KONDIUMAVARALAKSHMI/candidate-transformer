@@ -1,4 +1,3 @@
-
 from candidate_transformer.merger import _apply_provenance, _merge_record
 from candidate_transformer.schemas import (
     CandidateRecord,

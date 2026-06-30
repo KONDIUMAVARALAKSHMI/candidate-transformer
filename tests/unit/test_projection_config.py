@@ -77,7 +77,6 @@ def test_projection_nested_mapping() -> None:
     assert result["skills[]"]["name"] == ["Python", "SQL"]
 
 
-
 def test_projection_nested_mapping_out_of_bounds() -> None:
     record = CandidateRecord(
         full_name="Ananya Reddy",

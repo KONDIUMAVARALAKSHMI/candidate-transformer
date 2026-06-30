@@ -114,7 +114,7 @@ def test_cli_help() -> None:
 
     from candidate_transformer.cli import app
 
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=True)
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "Transform candidate records" in result.stdout
@@ -128,5 +128,5 @@ def test_cli_no_args() -> None:
     runner = CliRunner()
     result = runner.invoke(app, [])
     assert result.exit_code == 2
-    output = result.stderr or result.stdout
+    output = result.stdout
     assert "At least one of --csv, --ats, or --resume must be provided." in output

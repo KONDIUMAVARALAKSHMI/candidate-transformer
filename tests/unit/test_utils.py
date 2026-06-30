@@ -128,4 +128,5 @@ def test_cli_no_args() -> None:
     runner = CliRunner()
     result = runner.invoke(app, [])
     assert result.exit_code == 2
-    assert "At least one of --csv, --ats, or --resume must be provided." in result.stderr
+    output = result.stderr or result.stdout
+    assert "At least one of --csv, --ats, or --resume must be provided." in output

@@ -184,59 +184,125 @@ def _normalize_source_record(
 def _merge_record(
     existing: CandidateRecord, incoming: CandidateRecord, source_name: str
 ) -> CandidateRecord:
+    # candidate_id
     if incoming.candidate_id and not existing.candidate_id:
         existing.candidate_id = incoming.candidate_id
         _append_provenance(existing, "candidate_id", source_name, "merge")
+    elif incoming.candidate_id and existing.candidate_id:
+        if incoming.candidate_id == existing.candidate_id:
+            _append_provenance(existing, "candidate_id", source_name, "agreement")
+        else:
+            _append_provenance(existing, "candidate_id", source_name, "conflict")
 
+    # full_name
     if incoming.full_name and not existing.full_name:
         existing.full_name = incoming.full_name
         _append_provenance(existing, "full_name", source_name, "merge")
+    elif incoming.full_name and existing.full_name:
+        if incoming.full_name.lower() == existing.full_name.lower():
+            _append_provenance(existing, "full_name", source_name, "agreement")
+        else:
+            _append_provenance(existing, "full_name", source_name, "conflict")
 
-    existing.emails = _merge_unique_strings(existing.emails, incoming.emails)
-    if incoming.emails and existing.emails and existing.emails != incoming.emails:
+    # emails
+    if incoming.emails and existing.emails:
+        common_emails = set(existing.emails) & set(incoming.emails)
+        for _ in common_emails:
+            _append_provenance(existing, "emails", source_name, "agreement")
+        if not common_emails:
+            _append_provenance(existing, "emails", source_name, "conflict")
+    new_emails = [e for e in incoming.emails if e not in existing.emails]
+    if new_emails:
+        existing.emails = _merge_unique_strings(existing.emails, new_emails)
         _append_provenance(existing, "emails", source_name, "merge")
 
-    existing.phones = _merge_unique_strings(existing.phones, incoming.phones)
-    if incoming.phones and existing.phones and existing.phones != incoming.phones:
+    # phones
+    if incoming.phones and existing.phones:
+        common_phones = set(existing.phones) & set(incoming.phones)
+        for _ in common_phones:
+            _append_provenance(existing, "phones", source_name, "agreement")
+        if not common_phones:
+            _append_provenance(existing, "phones", source_name, "conflict")
+    new_phones = [p for p in incoming.phones if p not in existing.phones]
+    if new_phones:
+        existing.phones = _merge_unique_strings(existing.phones, new_phones)
         _append_provenance(existing, "phones", source_name, "merge")
 
+    # location.city
     if incoming.location.city and not existing.location.city:
         existing.location.city = incoming.location.city
         _append_provenance(existing, "location.city", source_name, "merge")
+    elif incoming.location.city and existing.location.city:
+        if incoming.location.city.lower() == existing.location.city.lower():
+            _append_provenance(existing, "location.city", source_name, "agreement")
+        else:
+            _append_provenance(existing, "location.city", source_name, "conflict")
+
+    # location.region
     if incoming.location.region and not existing.location.region:
         existing.location.region = incoming.location.region
         _append_provenance(existing, "location.region", source_name, "merge")
+    elif incoming.location.region and existing.location.region:
+        if incoming.location.region.lower() == existing.location.region.lower():
+            _append_provenance(existing, "location.region", source_name, "agreement")
+        else:
+            _append_provenance(existing, "location.region", source_name, "conflict")
+
+    # location.country
     if incoming.location.country and not existing.location.country:
         existing.location.country = incoming.location.country
         _append_provenance(existing, "location.country", source_name, "merge")
+    elif incoming.location.country and existing.location.country:
+        if incoming.location.country.lower() == existing.location.country.lower():
+            _append_provenance(existing, "location.country", source_name, "agreement")
+        else:
+            _append_provenance(existing, "location.country", source_name, "conflict")
 
-    if incoming.links.linkedin and not existing.links.linkedin:
-        existing.links.linkedin = incoming.links.linkedin
-        _append_provenance(existing, "links.linkedin", source_name, "merge")
-    if incoming.links.github and not existing.links.github:
-        existing.links.github = incoming.links.github
-        _append_provenance(existing, "links.github", source_name, "merge")
-    if incoming.links.portfolio and not existing.links.portfolio:
-        existing.links.portfolio = incoming.links.portfolio
-        _append_provenance(existing, "links.portfolio", source_name, "merge")
+    # links
+    for link_type in ["linkedin", "github", "portfolio"]:
+        incoming_link = getattr(incoming.links, link_type)
+        existing_link = getattr(existing.links, link_type)
+        if incoming_link and not existing_link:
+            setattr(existing.links, link_type, incoming_link)
+            _append_provenance(existing, f"links.{link_type}", source_name, "merge")
+        elif incoming_link and existing_link:
+            if incoming_link.lower() == existing_link.lower():
+                _append_provenance(existing, f"links.{link_type}", source_name, "agreement")
+            else:
+                _append_provenance(existing, f"links.{link_type}", source_name, "conflict")
+
     if incoming.links.other:
         existing.links.other = _merge_unique_strings(existing.links.other, incoming.links.other)
         if existing.links.other != [*existing.links.other]:
             _append_provenance(existing, "links.other", source_name, "merge")
 
+    # headline
     if incoming.headline and not existing.headline:
         existing.headline = incoming.headline
         _append_provenance(existing, "headline", source_name, "merge")
+    elif incoming.headline and existing.headline:
+        if incoming.headline.lower() == existing.headline.lower():
+            _append_provenance(existing, "headline", source_name, "agreement")
+        else:
+            _append_provenance(existing, "headline", source_name, "conflict")
 
+    # years_experience
     if incoming.years_experience is not None and existing.years_experience is None:
         existing.years_experience = incoming.years_experience
         _append_provenance(existing, "years_experience", source_name, "merge")
+    elif incoming.years_experience is not None and existing.years_experience is not None:
+        if incoming.years_experience == existing.years_experience:
+            _append_provenance(existing, "years_experience", source_name, "agreement")
+        else:
+            _append_provenance(existing, "years_experience", source_name, "conflict")
 
+    # skills
     if incoming.skills:
         existing.skills = _merge_skills(existing.skills, incoming.skills, source_name)
         if existing.skills and incoming.skills:
             _append_provenance(existing, "skills", source_name, "merge")
 
+    # experience
     if incoming.experience:
         existing.experience.extend(
             [item for item in incoming.experience if item not in existing.experience]
@@ -244,6 +310,7 @@ def _merge_record(
         if existing.experience:
             _append_provenance(existing, "experience", source_name, "merge")
 
+    # education
     if incoming.education:
         existing.education.extend(
             [item for item in incoming.education if item not in existing.education]

@@ -101,6 +101,39 @@ def project_record(
 
 
 def _resolve_field(record: CandidateRecord, field_name: str) -> Any:
+    # Handle list attribute projection (e.g., skills[].name)
+    if "[]" in field_name:
+        parts = field_name.split("[]")
+        base = parts[0]
+        rest = parts[1].lstrip(".")
+        base_val = _resolve_field(record, base)
+        if isinstance(base_val, list):
+            res = []
+            for item in base_val:
+                if isinstance(item, dict) and rest in item:
+                    res.append(item[rest])
+                elif hasattr(item, "dict") and rest in getattr(item, "dict")():
+                    res.append(getattr(item, "dict")()[rest])
+                elif hasattr(item, "model_dump") and rest in getattr(item, "model_dump")():
+                    res.append(getattr(item, "model_dump")()[rest])
+                elif hasattr(item, rest):
+                    res.append(getattr(item, rest))
+                else:
+                    res.append(None)
+            return res
+        return None
+
+    # Handle array index lookup (e.g., emails[0])
+    import re
+    match = re.match(r"^(\w+)\[(\d+)\]$", field_name)
+    if match:
+        base = match.group(1)
+        index = int(match.group(2))
+        base_val = _resolve_field(record, base)
+        if isinstance(base_val, list) and 0 <= index < len(base_val):
+            return base_val[index]
+        return None
+
     if field_name == "candidate_id":
         return record.candidate_id
     if field_name == "full_name":
@@ -128,6 +161,7 @@ def _resolve_field(record: CandidateRecord, field_name: str) -> Any:
     if field_name == "education":
         return [item.model_dump() for item in record.education]
     return None
+
 
 
 def _normalize_for_projection(field_name: str, value: Any) -> Any:

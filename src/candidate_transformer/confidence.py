@@ -30,16 +30,41 @@ def compute_field_confidences(
         "experience",
         "education",
     }:
-        matching = [entry for entry in record.provenance if entry.field == field]
+        matching = [
+            entry
+            for entry in record.provenance
+            if entry.field == field or entry.field.startswith(f"{field}.")
+        ]
         if matching:
-            confidences[field] = max(weights.get(entry.source.lower(), 0.0) for entry in matching)
+            valid_matching = [entry for entry in matching if entry.method != "conflict"]
+            if valid_matching:
+                base_conf = max(weights.get(entry.source.lower(), 0.0) for entry in valid_matching)
+            else:
+                base_conf = 0.5
+
+            # Agreement: number of unique sources that agreed or merged
+            unique_sources = {entry.source.lower() for entry in valid_matching}
+            agreement_bonus = 0.05 * (len(unique_sources) - 1)
+
+            # Conflict: check if there are any conflict method entries
+            conflict_entries = [entry for entry in matching if entry.method == "conflict"]
+            conflict_penalty = 0.10 * len(conflict_entries)
+
+            conf = base_conf + agreement_bonus - conflict_penalty
+            conf = max(0.0, min(1.0, conf))
+            confidences[field] = conf
 
     if record.skills:
-        confidences["skills"] = sum(skill.confidence for skill in record.skills) / max(
-            1, len(record.skills)
-        )
+        skill_confs = []
+        for skill in record.skills:
+            s_base = skill.confidence
+            s_agreement = 0.05 * (len(skill.sources) - 1)
+            s_conf = max(0.0, min(1.0, s_base + s_agreement))
+            skill_confs.append(s_conf)
+        confidences["skills"] = sum(skill_confs) / max(1, len(record.skills))
 
     return confidences
+
 
 
 def compute_overall_confidence(

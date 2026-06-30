@@ -1,54 +1,33 @@
 from __future__ import annotations
-from typing import Optional
 
-from pathlib import Path
-
+import sys
 import typer
+from pathlib import Path
 
 from candidate_transformer.pipeline import run_pipeline
 
-app = typer.Typer(add_completion=False, no_args_is_help=True)
-
-
-try:
-    import click
-
-    _original_make_metavar = click.Parameter.make_metavar
-
-    def _make_metavar_compat(self, *args, **kwargs):
-        try:
-            return _original_make_metavar(self, *args, **kwargs)
-        except TypeError:
-            return _original_make_metavar(self, None)
-
-    click.Parameter.make_metavar = _make_metavar_compat
-
-except Exception:
-    pass
-
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=False,
+    help="Transform candidate records",
+)
 
 @app.command("run")
 def run(
-    csv: str = typer.Option(None, "--csv", help="Path to CSV file"),
-    ats: Optional[Path] = typer.Option(None, "--ats", help="Path to ATS JSON file"),
-    resume: Optional[Path] = typer.Option(None, "--resume", help="Path to resume file"),
-    config: Optional[Path] = typer.Option(None, "--config", help="Path to config YAML"),
-    output: Optional[Path] = typer.Option(None, "--output", help="Output JSONL path"),
-    projection_config: Optional[Path] = typer.Option(
+    csv: Path | None = typer.Option(None, "--csv", help="Path to CSV file"),
+    ats: Path | None = typer.Option(None, "--ats", help="Path to ATS JSON file"),
+    resume: Path | None = typer.Option(None, "--resume", help="Path to resume file"),
+    config: Path | None = typer.Option(None, "--config", help="Path to config YAML"),
+    output: Path | None = typer.Option(None, "--output", help="Output JSONL path"),
+    projection_config: Path | None = typer.Option(
         None,
         "--projection-config",
-        help="Path to projection config JSON",
+        help="Projection config JSON file",
     ),
 ) -> None:
-    """
-    Transform candidate records into a unified schema.
-    """
-
+    """Transform candidate records"""
     if not any([csv, ats, resume]):
-        typer.echo(
-            "Error: At least one of --csv, --ats, or --resume must be provided.",
-            err=True,
-        )
+        typer.echo("At least one of --csv, --ats, or --resume must be provided.\n")
         raise typer.Exit(code=2)
 
     try:
@@ -64,9 +43,9 @@ def run(
         typer.echo(f"Pipeline failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
-    output_path = output or Path("output/candidates_unified.jsonl")
+    output_path = output or "output/candidates_unified.jsonl"
     typer.echo(f"Wrote {len(records)} candidate record(s) to {output_path}")
-
 
 if __name__ == "__main__":
     app()
+    """Transform candidate records"""

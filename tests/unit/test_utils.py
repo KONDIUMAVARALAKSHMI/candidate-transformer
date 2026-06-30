@@ -114,7 +114,7 @@ def test_cli_help() -> None:
 
     from candidate_transformer.cli import app
 
-    runner = CliRunner(mix_stderr=True)
+    runner = CliRunner()
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "Transform candidate records" in result.stdout

@@ -23,10 +23,7 @@ def parse_csv(path: str | Path) -> list[dict[str, Any]]:
         for row in reader:
             cleaned_row: dict[str, Any] = {}
             for index, key in enumerate(normalized_headers):
-                if index >= len(row):
-                    cleaned_value = None
-                else:
-                    cleaned_value = str(row[index]).strip()
+                cleaned_value = None if index >= len(row) else str(row[index]).strip()
 
                 if key.lower() == "skills" and cleaned_value:
                     if index == len(normalized_headers) - 1 and len(row) > len(normalized_headers):

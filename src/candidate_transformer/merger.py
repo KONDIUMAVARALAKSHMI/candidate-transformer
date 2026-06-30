@@ -1,40 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from candidate_transformer.normalizers.date import normalize_date
 from candidate_transformer.normalizers.name import normalize_name
 from candidate_transformer.normalizers.phone import normalize_phone
-from candidate_transformer.schemas import CandidateRecord, Education, Experience, Links, Location, Provenance, Skill
+from candidate_transformer.normalizers.country import normalize_country
+from candidate_transformer.schemas import (
+    CandidateRecord,
+    Education,
+    Experience,
+    Provenance,
+    Skill,
+)
 
-COUNTRY_ALIASES = {
-    "india": "IN",
-    "in": "IN",
-    "ind": "IN",
-    "us": "US",
-    "usa": "US",
-    "united states": "US",
-    "united states of america": "US",
-    "uk": "GB",
-    "u.k.": "GB",
-    "great britain": "GB",
-    "canada": "CA",
-    "ca": "CA",
-    "singapore": "SG",
-    "sg": "SG",
-    "australia": "AU",
-    "au": "AU",
-    "germany": "DE",
-    "de": "DE",
-    "france": "FR",
-    "fr": "FR",
-    "netherlands": "NL",
-    "nl": "NL",
-    "spain": "ES",
-    "es": "ES",
-    "japan": "JP",
-    "jp": "JP",
-}
 
 SKILL_ALIASES = {
     "sql": "SQL",
@@ -130,11 +110,11 @@ def _normalize_source_record(
         if len(parts) >= 2:
             record.location.region = parts[1]
         if len(parts) >= 3:
-            record.location.country = _normalize_country(parts[2])
+            record.location.country = normalize_country(parts[2])
     elif isinstance(location_value, Mapping):
         record.location.city = str(location_value.get("city") or "") or None
         record.location.region = str(location_value.get("region") or "") or None
-        record.location.country = _normalize_country(str(location_value.get("country") or "") or None)
+        record.location.country = normalize_country(str(location_value.get("country") or "") or None)
 
     links_value = raw_record.get("links")
     if isinstance(links_value, Mapping):
@@ -337,15 +317,7 @@ def _candidate_key(candidate: CandidateRecord) -> str:
     return "unknown"
 
 
-def _normalize_country(value: str | None) -> str | None:
-    if not value:
-        return None
-    cleaned = value.strip().lower()
-    if not cleaned:
-        return None
-    if cleaned in COUNTRY_ALIASES:
-        return COUNTRY_ALIASES[cleaned]
-    return value.strip().upper() if len(value.strip()) == 2 else value.strip()
+# country normalization is handled by candidate_transformer.normalizers.country.normalize_country
 
 
 def _canonical_skill_name(value: str) -> str:

@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 from candidate_transformer.confidence import compute_field_confidences
 from candidate_transformer.schemas import CandidateRecord
 
-
 CANONICAL_FIELDS = [
     "candidate_id",
     "full_name",

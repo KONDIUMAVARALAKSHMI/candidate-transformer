@@ -1,8 +1,7 @@
 import json
-from pathlib import Path
 
-from candidate_transformer.pipeline import run_pipeline
 from candidate_transformer.parsers import pdf_parser
+from candidate_transformer.pipeline import run_pipeline
 
 
 def test_pipeline_merges_and_projects_candidates(tmp_path, monkeypatch) -> None:

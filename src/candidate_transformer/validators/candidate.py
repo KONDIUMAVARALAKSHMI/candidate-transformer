@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Mapping
+from typing import Any
 
 
 def validate_email_format(email: str) -> bool:
@@ -41,8 +42,8 @@ def validate_chronological_experience(experience: list[Any]) -> bool:
             start_str = exp.get("start")
             end_str = exp.get("end")
         elif hasattr(exp, "start") and hasattr(exp, "end"):
-            start_str = getattr(exp, "start")
-            end_str = getattr(exp, "end")
+            start_str = exp.start
+            end_str = exp.end
 
         if not start_str or not end_str:
             continue

@@ -113,6 +113,7 @@ def test_schema_level_validation_chronology_failure() -> None:
 
 def test_cli_help() -> None:
     from typer.testing import CliRunner
+
     from candidate_transformer.cli import app
 
     runner = CliRunner()
@@ -123,6 +124,7 @@ def test_cli_help() -> None:
 
 def test_cli_no_args() -> None:
     from typer.testing import CliRunner
+
     from candidate_transformer.cli import app
 
     runner = CliRunner()

@@ -17,3 +17,6 @@ pytest-mock==3.14.0
 ruff==0.4.7                 # Linter + formatter (replaces flake8 + black)
 mypy==1.10.0                # Static type checking
 pre-commit==3.7.1           # Git hooks for lint / format on commit
+    
+# Optional: improved country name lookups
+pycountry==22.3.5

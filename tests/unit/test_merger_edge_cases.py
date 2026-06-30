@@ -1,4 +1,3 @@
-import pytest
 from candidate_transformer.merger import merge_candidates
 
 

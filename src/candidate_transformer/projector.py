@@ -81,7 +81,7 @@ def project_record(
 
         output_key = projection_config.field_rename.get(field_name, field_name)
         output_key = projection_config.canonical_path_mapping.get(field_name, output_key)
-        #output_key = output_key.replace("[]", "")
+        # output_key = output_key.replace("[]", "")
         _set_nested_value(output, output_key, value)
 
     if projection_config.include_confidence:
@@ -208,4 +208,3 @@ def _set_nested_value(payload: dict[str, Any], path: str, value: Any) -> None:
         current = current[part]
 
     current[parts[-1]] = value
-

@@ -57,6 +57,7 @@ SKILL_ALIASES = {
 # PUBLIC API
 # -----------------------------
 
+
 def merge_candidates(
     csv_records: list[dict[str, Any]],
     ats_records: list[dict[str, Any]],
@@ -64,7 +65,6 @@ def merge_candidates(
     default_country: str = "IN",
     date_formats: list[str] | None = None,
 ) -> list[CandidateRecord]:
-
     merged: dict[str, CandidateRecord] = {}
 
     source_order = [
@@ -103,13 +103,13 @@ def merge_candidates(
 # NORMALIZATION
 # -----------------------------
 
+
 def _normalize_source_record(
     raw_record: Mapping[str, Any],
     source_name: str,
     default_country: str,
     date_formats: list[str] | None,
 ) -> CandidateRecord:
-
     record = CandidateRecord()
 
     # name
@@ -119,19 +119,11 @@ def _normalize_source_record(
 
     # emails
     emails = _as_list(raw_record.get("emails") or raw_record.get("email"))
-    record.emails = [
-        e.strip().lower()
-        for e in emails
-        if e and str(e).strip()
-    ]
+    record.emails = [e.strip().lower() for e in emails if e and str(e).strip()]
 
     # phones
     phones = _as_list(raw_record.get("phones") or raw_record.get("phone"))
-    record.phones = [
-        normalize_phone(str(p), default_country=default_country)
-        for p in phones
-        if p
-    ]
+    record.phones = [normalize_phone(str(p), default_country=default_country) for p in phones if p]
 
     # location
     loc = raw_record.get("location")
@@ -178,9 +170,7 @@ def _normalize_source_record(
         record.skills = [
             Skill(
                 name=_canonical_skill_name(str(s)),
-                confidence=0.95 if source_name == "ats"
-                else 0.9 if source_name == "csv"
-                else 0.8,
+                confidence=0.95 if source_name == "ats" else 0.9 if source_name == "csv" else 0.8,
                 sources=[source_name],
             )
             for s in _as_list(skills)
@@ -219,12 +209,12 @@ def _normalize_source_record(
 # MERGE LOGIC
 # -----------------------------
 
+
 def _merge_record(
     existing: CandidateRecord,
     incoming: CandidateRecord,
     source: str,
 ) -> CandidateRecord:
-
     # ID
     if incoming.candidate_id and not existing.candidate_id:
         existing.candidate_id = incoming.candidate_id
@@ -240,7 +230,9 @@ def _merge_record(
         _append_provenance(existing, "full_name", source, "merge")
 
     elif incoming.full_name and existing.full_name:
-        method = "agreement" if incoming.full_name.lower() == existing.full_name.lower() else "conflict"
+        method = (
+            "agreement" if incoming.full_name.lower() == existing.full_name.lower() else "conflict"
+        )
         _append_provenance(existing, "full_name", source, method)
 
     # emails
@@ -299,8 +291,8 @@ def _merge_record(
 # LOCATION FIX (IMPORTANT)
 # -----------------------------
 
-def _merge_location(existing: CandidateRecord, incoming: CandidateRecord, source: str) -> None:
 
+def _merge_location(existing: CandidateRecord, incoming: CandidateRecord, source: str) -> None:
     for field in ["city", "region", "country"]:
         inc = getattr(incoming.location, field)
         exc = getattr(existing.location, field)
@@ -317,6 +309,7 @@ def _merge_location(existing: CandidateRecord, incoming: CandidateRecord, source
 # -----------------------------
 # PROVENANCE
 # -----------------------------
+
 
 def _apply_provenance(record: CandidateRecord, source_name: str) -> CandidateRecord:
     def has_value(value: Any) -> bool:
@@ -347,12 +340,7 @@ def _apply_provenance(record: CandidateRecord, source_name: str) -> CandidateRec
     ):
         _append_provenance(record, "location", source_name, "source")
 
-    if (
-        record.links.linkedin
-        or record.links.github
-        or record.links.portfolio
-        or record.links.other
-    ):
+    if record.links.linkedin or record.links.github or record.links.portfolio or record.links.other:
         _append_provenance(record, "links", source_name, "source")
 
     if record.headline:
@@ -377,6 +365,7 @@ def _apply_provenance(record: CandidateRecord, source_name: str) -> CandidateRec
 # -----------------------------
 # HELPERS
 # -----------------------------
+
 
 def _append_provenance(record: CandidateRecord, field: str, source: str, method: str) -> None:
     record.provenance.append(Provenance(field=field, source=source, method=method))
@@ -426,5 +415,3 @@ def _as_list(value: Any) -> list[Any]:
     if isinstance(value, tuple):
         return list(value)
     return [value]
-
-

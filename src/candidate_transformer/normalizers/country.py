@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 # Minimal alias map for quick lookups and to avoid an external dependency when possible.
 COUNTRY_ALIASES: dict[str, str] = {
     "india": "IN",

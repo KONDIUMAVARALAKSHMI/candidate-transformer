@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from candidate_transformer.normalizers.country import normalize_country
 from candidate_transformer.normalizers.date import normalize_date
 from candidate_transformer.normalizers.name import normalize_name
 from candidate_transformer.normalizers.phone import normalize_phone
-from candidate_transformer.normalizers.country import normalize_country
 from candidate_transformer.schemas import (
     CandidateRecord,
     Education,
@@ -14,7 +14,6 @@ from candidate_transformer.schemas import (
     Provenance,
     Skill,
 )
-
 
 SKILL_ALIASES = {
     "sql": "SQL",

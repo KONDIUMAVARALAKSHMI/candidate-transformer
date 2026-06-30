@@ -1,0 +1,47 @@
+{
+  "name": "Ananya Reddy",
+  "email_addresses": [
+    "ananya.reddy@gmail.com"
+  ],
+  "phone_numbers": [
+    "+919876543210"
+  ],
+  "capabilities": [
+    {
+      "name": "Python",
+      "confidence": 0.95,
+      "sources": [
+        "ats",
+        "csv",
+        "resume"
+      ]
+    },
+    {
+      "name": "SQL",
+      "confidence": 0.95,
+      "sources": [
+        "ats",
+        "csv",
+        "resume"
+      ]
+    },
+    {
+      "name": "AWS",
+      "confidence": 0.95,
+      "sources": [
+        "ats",
+        "csv",
+        "resume"
+      ]
+    },
+    {
+      "name": "Docker",
+      "confidence": 0.95,
+      "sources": [
+        "ats",
+        "csv",
+        "resume"
+      ]
+    }
+  ]
+}

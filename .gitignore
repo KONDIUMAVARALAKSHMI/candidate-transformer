@@ -45,12 +45,7 @@ htmlcov/
 !.env.example
 secrets/
 
-# Inputs
-inputs/
-
-# Outputs / Logs
-outputs/
-output/
+# Logs
 *.log
 *.jsonl
 

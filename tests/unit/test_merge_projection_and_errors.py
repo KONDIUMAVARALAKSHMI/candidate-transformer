@@ -46,7 +46,9 @@ def test_custom_projection_still_renames_fields() -> None:
 
     projected = project_record(
         record,
-        ProjectionConfig(field_selection=["full_name", "emails", "skills"], field_rename={"full_name": "name"}),
+        ProjectionConfig(
+            field_selection=["full_name", "emails", "skills"], field_rename={"full_name": "name"}
+        ),
     )
 
     assert set(projected.keys()) == {"name", "emails", "skills"}
@@ -87,7 +89,9 @@ def test_duplicate_merge_uses_same_candidate_profile(tmp_path: Path) -> None:
     )
 
     output_path = tmp_path / "output.json"
-    records = run_pipeline(csv_path=csv_path, ats_path=ats_path, resume_path=resume_path, output_path=output_path)
+    records = run_pipeline(
+        csv_path=csv_path, ats_path=ats_path, resume_path=resume_path, output_path=output_path
+    )
 
     assert len(records) == 1
     assert records[0].full_name == "Jane Doe"

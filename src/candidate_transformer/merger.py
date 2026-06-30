@@ -67,7 +67,9 @@ def merge_candidates(
 
     for source_name, records in source_order:
         for raw_record in records:
-            candidate = _normalize_source_record(raw_record, source_name, default_country, date_formats)
+            candidate = _normalize_source_record(
+                raw_record, source_name, default_country, date_formats
+            )
             key = _candidate_key(candidate)
             if key not in merged:
                 merged[key] = CandidateRecord()
@@ -113,7 +115,9 @@ def _normalize_source_record(
     elif isinstance(location_value, Mapping):
         record.location.city = str(location_value.get("city") or "") or None
         record.location.region = str(location_value.get("region") or "") or None
-        record.location.country = normalize_country(str(location_value.get("country") or "") or None)
+        record.location.country = normalize_country(
+            str(location_value.get("country") or "") or None
+        )
 
     links_value = raw_record.get("links")
     if isinstance(links_value, Mapping):
@@ -153,8 +157,12 @@ def _normalize_source_record(
                 Experience(
                     company=str(experience.get("company") or "") or None,
                     title=str(experience.get("title") or "") or None,
-                    start=normalize_date(str(experience.get("start") or "") or None, date_formats=date_formats),
-                    end=normalize_date(str(experience.get("end") or "") or None, date_formats=date_formats),
+                    start=normalize_date(
+                        str(experience.get("start") or "") or None, date_formats=date_formats
+                    ),
+                    end=normalize_date(
+                        str(experience.get("end") or "") or None, date_formats=date_formats
+                    ),
                     summary=str(experience.get("summary") or "") or None,
                 )
             )
@@ -173,7 +181,9 @@ def _normalize_source_record(
     return _apply_provenance(record, source_name)
 
 
-def _merge_record(existing: CandidateRecord, incoming: CandidateRecord, source_name: str) -> CandidateRecord:
+def _merge_record(
+    existing: CandidateRecord, incoming: CandidateRecord, source_name: str
+) -> CandidateRecord:
     if incoming.candidate_id and not existing.candidate_id:
         existing.candidate_id = incoming.candidate_id
         _append_provenance(existing, "candidate_id", source_name, "merge")
@@ -228,12 +238,16 @@ def _merge_record(existing: CandidateRecord, incoming: CandidateRecord, source_n
             _append_provenance(existing, "skills", source_name, "merge")
 
     if incoming.experience:
-        existing.experience.extend([item for item in incoming.experience if item not in existing.experience])
+        existing.experience.extend(
+            [item for item in incoming.experience if item not in existing.experience]
+        )
         if existing.experience:
             _append_provenance(existing, "experience", source_name, "merge")
 
     if incoming.education:
-        existing.education.extend([item for item in incoming.education if item not in existing.education])
+        existing.education.extend(
+            [item for item in incoming.education if item not in existing.education]
+        )
         if existing.education:
             _append_provenance(existing, "education", source_name, "merge")
 

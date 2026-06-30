@@ -9,7 +9,9 @@ SOURCE_WEIGHTS: dict[str, float] = {
 }
 
 
-def compute_field_confidences(record: CandidateRecord, source_weights: dict[str, float] | None = None) -> dict[str, float]:
+def compute_field_confidences(
+    record: CandidateRecord, source_weights: dict[str, float] | None = None
+) -> dict[str, float]:
     """Compute field-level confidence values from provenance entries."""
 
     weights = source_weights or SOURCE_WEIGHTS
@@ -33,7 +35,9 @@ def compute_field_confidences(record: CandidateRecord, source_weights: dict[str,
             confidences[field] = max(weights.get(entry.source.lower(), 0.0) for entry in matching)
 
     if record.skills:
-        confidences["skills"] = sum(skill.confidence for skill in record.skills) / max(1, len(record.skills))
+        confidences["skills"] = sum(skill.confidence for skill in record.skills) / max(
+            1, len(record.skills)
+        )
 
     return confidences
 
@@ -51,7 +55,9 @@ def compute_overall_confidence(
     return sum(field_confidences.values()) / len(field_confidences)
 
 
-def apply_confidence(record: CandidateRecord, source_weights: dict[str, float] | None = None) -> CandidateRecord:
+def apply_confidence(
+    record: CandidateRecord, source_weights: dict[str, float] | None = None
+) -> CandidateRecord:
     """Apply confidence values to the record in place and return it."""
 
     record.overall_confidence = compute_overall_confidence(record, source_weights=source_weights)

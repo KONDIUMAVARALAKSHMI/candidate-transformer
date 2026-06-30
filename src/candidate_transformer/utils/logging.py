@@ -7,14 +7,17 @@ from typing import Any
 import structlog
 
 
-def configure_logging(level: str = "INFO", format_type: str = "json") -> None:
+def configure_logging(
+    level: str = "INFO",
+    format_type: str = "json",
+) -> None:
     """
     Configure structured logging for the candidate transformer application.
-    Supports JSON output for production environments and pretty-printed console output for development.
+    Supports JSON output for production and pretty console output for dev.
     """
     numeric_level = getattr(logging, level.upper(), logging.INFO)
 
-    # Base logging config for standard library compatibility
+    # Base logging config
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stderr,

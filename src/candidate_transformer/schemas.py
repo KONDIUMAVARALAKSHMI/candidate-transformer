@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -93,6 +92,7 @@ class CandidateRecord(BaseModel):
     @classmethod
     def check_emails(cls, value: list[str]) -> list[str]:
         from candidate_transformer.validators.candidate import validate_email_format
+
         for email in value:
             if not validate_email_format(email):
                 raise ValueError(f"Invalid email address syntax: {email}")
@@ -102,6 +102,7 @@ class CandidateRecord(BaseModel):
     @classmethod
     def check_phones(cls, value: list[str]) -> list[str]:
         from candidate_transformer.validators.candidate import validate_phone_format
+
         for phone in value:
             if not validate_phone_format(phone):
                 raise ValueError(f"Invalid phone number format (must be E.164-compliant): {phone}")
@@ -110,6 +111,7 @@ class CandidateRecord(BaseModel):
     @model_validator(mode="after")
     def check_chronology(self) -> "CandidateRecord":
         from candidate_transformer.validators.candidate import validate_chronological_experience
+
         if self.experience:
             validate_chronological_experience(self.experience)
         return self

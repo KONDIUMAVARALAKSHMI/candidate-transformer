@@ -57,7 +57,9 @@ def load_projection_config(config_path: str | Path | None = None) -> ProjectionC
     raise ValueError("Projection configuration must be a JSON object.")
 
 
-def project_record(record: CandidateRecord, config: ProjectionConfig | None = None) -> dict[str, Any]:
+def project_record(
+    record: CandidateRecord, config: ProjectionConfig | None = None
+) -> dict[str, Any]:
     """Project a canonical candidate record into a runtime-friendly dictionary."""
 
     projection_config = config or ProjectionConfig()

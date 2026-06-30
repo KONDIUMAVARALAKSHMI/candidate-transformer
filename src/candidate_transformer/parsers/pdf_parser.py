@@ -31,7 +31,10 @@ def parse_pdf(path: str | Path) -> list[dict[str, Any]]:
     email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
     phone_match = re.search(r"\+?\d[\d\s().-]{7,}\d", text)
     name_match = re.search(r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)", text, re.MULTILINE)
-    skills = [token.strip() for token in re.findall(r"\b(Python|SQL|AWS|Java|Spark|Docker)\b", text, re.IGNORECASE)]
+    skills = [
+        token.strip()
+        for token in re.findall(r"\b(Python|SQL|AWS|Java|Spark|Docker)\b", text, re.IGNORECASE)
+    ]
 
     return [
         {

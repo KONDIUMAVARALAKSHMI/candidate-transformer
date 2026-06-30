@@ -90,7 +90,9 @@ def run_pipeline(
             on_missing=settings.on_missing,
         )
 
-    output = Path(output_path) if output_path else Path(settings.output_dir) / settings.output_filename
+    output = (
+        Path(output_path) if output_path else Path(settings.output_dir) / settings.output_filename
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
 
     validated_records: list[CandidateRecord] = []
@@ -111,7 +113,9 @@ def run_pipeline(
                 name=record.full_name or "unknown",
                 error=str(exc),
             )
-            raise ValueError(f"Validation failed for candidate {record.full_name or 'unknown'}: {exc}") from exc
+            raise ValueError(
+                f"Validation failed for candidate {record.full_name or 'unknown'}: {exc}"
+            ) from exc
 
         validated_records.append(candidate)
         projected_rows.append(projected)
@@ -123,4 +127,3 @@ def run_pipeline(
 
     logger.info("Wrote unified candidate output file", output_path=str(output))
     return validated_records
-

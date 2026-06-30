@@ -27,7 +27,9 @@ def parse_csv(path: str | Path) -> list[dict[str, Any]]:
 
                 if key.lower() == "skills" and cleaned_value:
                     if index == len(normalized_headers) - 1 and len(row) > len(normalized_headers):
-                        combined = ", ".join(str(item).strip() for item in row[index:] if str(item).strip())
+                        combined = ", ".join(
+                            str(item).strip() for item in row[index:] if str(item).strip()
+                        )
                         cleaned_value = _split_skills(combined)
                     else:
                         cleaned_value = _split_skills(cleaned_value)

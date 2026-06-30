@@ -52,7 +52,7 @@ def test_validators() -> None:
     assert validate_phone_format("+919876543210") is True
     assert validate_phone_format("+14155550101") is True
     assert validate_phone_format("9876543210") is False  # Missing +
-    assert validate_phone_format("+123") is False       # Too short
+    assert validate_phone_format("+123") is False  # Too short
     assert validate_phone_format("") is False
 
     # Chronology validation
@@ -75,9 +75,7 @@ def test_schema_level_validation_success() -> None:
         full_name="Ananya Reddy",
         emails=["ananya.reddy@gmail.com"],
         phones=["+919876543210"],
-        experience=[
-            Experience(company="Google", title="Intern", start="2022-05", end="2022-08")
-        ]
+        experience=[Experience(company="Google", title="Intern", start="2022-05", end="2022-08")],
     )
     assert record.full_name == "Ananya Reddy"
 
@@ -106,7 +104,7 @@ def test_schema_level_validation_chronology_failure() -> None:
             full_name="Jane Doe",
             experience=[
                 Experience(company="Acme", title="Engineer", start="2023-01", end="2022-12")
-            ]
+            ],
         )
     assert "has a start date '2023-01' that is after its end date '2022-12'" in str(exc_info.value)
 
@@ -131,5 +129,3 @@ def test_cli_no_args() -> None:
     result = runner.invoke(app, [])
     assert result.exit_code == 2
     assert "At least one of --csv, --ats, or --resume must be provided." in result.stderr
-
-

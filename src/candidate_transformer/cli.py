@@ -27,8 +27,10 @@ def run(
     ),
 ) -> None:
     """Transform candidate records"""
+
+    # ❗ ensures this branch is testable
     if not any([csv, ats, resume]):
-        typer.echo("At least one of --csv, --ats, or --resume must be provided.\n")
+        typer.echo("At least one of --csv, --ats, or --resume must be provided.")
         raise typer.Exit(code=2)
 
     try:
@@ -44,7 +46,8 @@ def run(
         typer.echo(f"Pipeline failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
-    output_path = output or "output/candidates_unified.jsonl"
+    output_path = output or Path("output/candidates_unified.jsonl")
+
     typer.echo(f"Wrote {len(records)} candidate record(s) to {output_path}")
 
 

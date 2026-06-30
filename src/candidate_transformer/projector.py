@@ -81,6 +81,7 @@ def project_record(
 
         output_key = projection_config.field_rename.get(field_name, field_name)
         output_key = projection_config.canonical_path_mapping.get(field_name, output_key)
+        #output_key = output_key.replace("[]", "")
         _set_nested_value(output, output_key, value)
 
     if projection_config.include_confidence:
@@ -187,16 +188,24 @@ def _matching_provenance(record: CandidateRecord, field_name: str) -> list[dict[
 
 
 def _set_nested_value(payload: dict[str, Any], path: str, value: Any) -> None:
+    # Case 1: indexed field like emails[0]
+    if "[" in path and "]" in path and "[]" not in path:
+        payload[path] = value
+        return
+
+    # Case 2: array projection like skills[].name
+    if "[]" in path:
+        path = path.replace("[]", "")
+
     parts = [part for part in path.split(".") if part]
     if not parts:
         return
 
     current: dict[str, Any] = payload
     for part in parts[:-1]:
-        next_value = current.get(part)
-        if not isinstance(next_value, dict):
-            next_value = {}
-            current[part] = next_value
-        current = next_value
+        if part not in current or not isinstance(current[part], dict):
+            current[part] = {}
+        current = current[part]
 
     current[parts[-1]] = value
+

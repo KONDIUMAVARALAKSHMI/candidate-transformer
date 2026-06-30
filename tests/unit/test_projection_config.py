@@ -74,7 +74,7 @@ def test_projection_nested_mapping() -> None:
 
     result = project_record(record, config)
     assert result["emails[0]"] == "ananya.reddy@gmail.com"
-    assert result["skills[]"]["name"] == ["Python", "SQL"]
+    assert result["skills"]["name"] == ["Python", "SQL"]
 
 
 def test_projection_nested_mapping_out_of_bounds() -> None:

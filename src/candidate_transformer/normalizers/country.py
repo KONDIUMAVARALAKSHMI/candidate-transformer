@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# Minimal alias map for quick lookups and to avoid an external dependency when possible.
 COUNTRY_ALIASES: dict[str, str] = {
     "india": "IN",
     "in": "IN",
@@ -34,46 +33,65 @@ COUNTRY_ALIASES: dict[str, str] = {
 
 
 def normalize_country(value: str | None) -> str | None:
-    """Normalize a country value to ISO 3166-1 alpha-2 code when possible.
+    """Normalize country to ISO alpha-2 code when possible."""
 
-    Strategy:
-    - empty -> None
-    - check local alias map
-    - accept 2-letter alpha codes and return uppercased
-    - if pycountry is available, try a fuzzy lookup
-    - fall back to original trimmed value
-    """
     if not value:
         return None
+
     v = value.strip()
     if not v:
         return None
+
     lowered = v.lower()
+
+    # -------------------------
+    # Alias lookup (fast path)
+    # -------------------------
     if lowered in COUNTRY_ALIASES:
         return COUNTRY_ALIASES[lowered]
 
-    # 2-letter alpha code
+    # -------------------------
+    # direct alpha-2 code
+    # -------------------------
     if len(v) == 2 and v.isalpha():
         return v.upper()
 
-    # Try pycountry if installed for broader name support
+    # -------------------------
+    # pycountry lookup (optional dependency)
+    # -------------------------
     try:
-        import pycountry
+        import pycountry  # type: ignore
 
-        try:
-            country = pycountry.countries.lookup(v)
+        country = pycountry.countries.lookup(v)
+        if country:
             return str(country.alpha_2)
-        except Exception:
-            # fallback: attempt exact name / official_name matches
-            for c in pycountry.countries:
-                name = getattr(c, "name", "")
-                official = getattr(c, "official_name", "")
-                if name and name.lower() == lowered:
-                    return str(c.alpha_2)
-                if official and official.lower() == lowered:
-                    return str(c.alpha_2)
+
     except Exception:
-        # pycountry not available or lookup failed; continue
+        # pycountry not available OR lookup failed
         pass
 
+    # -------------------------
+    # fallback matching loop
+    # (this is what was NOT being hit before)
+    # -------------------------
+    try:
+        import pycountry  # type: ignore
+
+        for c in pycountry.countries:
+            name = getattr(c, "name", "")
+            official = getattr(c, "official_name", "")
+
+            if name and name.lower() == lowered:
+                return str(c.alpha_2)
+
+            if official and official.lower() == lowered:
+                return str(c.alpha_2)
+
+    except Exception:
+        # module not available → skip
+        pass
+
+    # -------------------------
+    # final fallback
+    # -------------------------
     return v.upper() if len(v) == 2 else v

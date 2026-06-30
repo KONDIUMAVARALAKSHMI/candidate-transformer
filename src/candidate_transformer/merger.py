@@ -15,6 +15,10 @@ from candidate_transformer.schemas import (
     Skill,
 )
 
+# -----------------------------
+# SKILL NORMALIZATION
+# -----------------------------
+
 SKILL_ALIASES = {
     "sql": "SQL",
     "postgresql": "PostgreSQL",
@@ -49,6 +53,10 @@ SKILL_ALIASES = {
 }
 
 
+# -----------------------------
+# PUBLIC API
+# -----------------------------
+
 def merge_candidates(
     csv_records: list[dict[str, Any]],
     ats_records: list[dict[str, Any]],
@@ -56,9 +64,9 @@ def merge_candidates(
     default_country: str = "IN",
     date_formats: list[str] | None = None,
 ) -> list[CandidateRecord]:
-    """Merge candidate records from multiple sources using deterministic priority rules."""
 
     merged: dict[str, CandidateRecord] = {}
+
     source_order = [
         ("ats", ats_records),
         ("csv", csv_records),
@@ -68,15 +76,32 @@ def merge_candidates(
     for source_name, records in source_order:
         for raw_record in records:
             candidate = _normalize_source_record(
-                raw_record, source_name, default_country, date_formats
+                raw_record,
+                source_name,
+                default_country,
+                date_formats,
             )
+
             key = _candidate_key(candidate)
+
             if key not in merged:
                 merged[key] = CandidateRecord()
-            merged[key] = _merge_record(merged[key], candidate, source_name)
 
-    return sorted(merged.values(), key=lambda item: (item.full_name or "", item.candidate_id or ""))
+            merged[key] = _merge_record(
+                merged[key],
+                candidate,
+                source_name,
+            )
 
+    return sorted(
+        merged.values(),
+        key=lambda x: (x.full_name or "", x.candidate_id or ""),
+    )
+
+
+# -----------------------------
+# NORMALIZATION
+# -----------------------------
 
 def _normalize_source_record(
     raw_record: Mapping[str, Any],
@@ -84,332 +109,313 @@ def _normalize_source_record(
     default_country: str,
     date_formats: list[str] | None,
 ) -> CandidateRecord:
+
     record = CandidateRecord()
 
+    # name
     full_name = raw_record.get("full_name") or raw_record.get("name")
     if full_name:
         record.full_name = normalize_name(full_name)
 
+    # emails
     emails = _as_list(raw_record.get("emails") or raw_record.get("email"))
-    if emails:
-        record.emails = [email.strip().lower() for email in emails if email and str(email).strip()]
+    record.emails = [
+        e.strip().lower()
+        for e in emails
+        if e and str(e).strip()
+    ]
 
+    # phones
     phones = _as_list(raw_record.get("phones") or raw_record.get("phone"))
-    if phones:
-        normalized_phones: list[str] = []
-        for phone in phones:
-            normalized = normalize_phone(str(phone), default_country=default_country)
-            if normalized:
-                normalized_phones.append(normalized)
-        record.phones = normalized_phones
+    record.phones = [
+        normalize_phone(str(p), default_country=default_country)
+        for p in phones
+        if p
+    ]
 
-    location_value = raw_record.get("location")
-    if isinstance(location_value, str) and location_value:
-        parts = [part.strip() for part in location_value.split(",") if part.strip()]
-        if len(parts) >= 1:
+    # location
+    loc = raw_record.get("location")
+    if isinstance(loc, str):
+        parts = [p.strip() for p in loc.split(",") if p.strip()]
+        if len(parts) > 0:
             record.location.city = parts[0]
-        if len(parts) >= 2:
+        if len(parts) > 1:
             record.location.region = parts[1]
-        if len(parts) >= 3:
+        if len(parts) > 2:
             record.location.country = normalize_country(parts[2])
-    elif isinstance(location_value, Mapping):
-        record.location.city = str(location_value.get("city") or "") or None
-        record.location.region = str(location_value.get("region") or "") or None
-        record.location.country = normalize_country(
-            str(location_value.get("country") or "") or None
-        )
 
-    links_value = raw_record.get("links")
-    if isinstance(links_value, Mapping):
-        record.links.linkedin = str(links_value.get("linkedin") or "") or None
-        record.links.github = str(links_value.get("github") or "") or None
-        record.links.portfolio = str(links_value.get("portfolio") or "") or None
-        record.links.other = [str(item) for item in links_value.get("other", []) if item]
-    elif isinstance(links_value, list):
-        record.links.other = [str(item) for item in links_value if item]
+    elif isinstance(loc, Mapping):
+        record.location.city = loc.get("city") or None
+        record.location.region = loc.get("region") or None
+        record.location.country = normalize_country(loc.get("country"))
 
-    headline = raw_record.get("headline")
-    if headline:
-        record.headline = str(headline)
+    # links
+    links = raw_record.get("links")
+    if isinstance(links, Mapping):
+        record.links.linkedin = links.get("linkedin") or None
+        record.links.github = links.get("github") or None
+        record.links.portfolio = links.get("portfolio") or None
+        record.links.other = links.get("other", []) or []
 
-    years_experience = raw_record.get("years_experience")
-    if years_experience is not None:
+    elif isinstance(links, list):
+        record.links.other = links
+
+    # headline
+    if raw_record.get("headline"):
+        record.headline = str(raw_record["headline"])
+
+    # experience
+    years = raw_record.get("years_experience")
+    if years is not None:
         try:
-            record.years_experience = float(years_experience)
-        except (TypeError, ValueError):
+            record.years_experience = float(years)
+        except Exception:
             record.years_experience = None
 
-    skills_value = raw_record.get("skills")
-    if skills_value:
+    # skills
+    skills = raw_record.get("skills")
+    if skills:
         record.skills = [
             Skill(
-                name=_canonical_skill_name(str(skill)),
-                confidence=0.95 if source_name == "ats" else 0.9 if source_name == "csv" else 0.8,
+                name=_canonical_skill_name(str(s)),
+                confidence=0.95 if source_name == "ats"
+                else 0.9 if source_name == "csv"
+                else 0.8,
                 sources=[source_name],
             )
-            for skill in _as_list(skills_value)
-            if str(skill).strip()
+            for s in _as_list(skills)
+            if str(s).strip()
         ]
 
-    for experience in _as_list(raw_record.get("experience")):
-        if isinstance(experience, Mapping):
+    # experience
+    for exp in _as_list(raw_record.get("experience")):
+        if isinstance(exp, Mapping):
             record.experience.append(
                 Experience(
-                    company=str(experience.get("company") or "") or None,
-                    title=str(experience.get("title") or "") or None,
-                    start=normalize_date(
-                        str(experience.get("start") or "") or None, date_formats=date_formats
-                    ),
-                    end=normalize_date(
-                        str(experience.get("end") or "") or None, date_formats=date_formats
-                    ),
-                    summary=str(experience.get("summary") or "") or None,
+                    company=exp.get("company"),
+                    title=exp.get("title"),
+                    start=normalize_date(exp.get("start"), date_formats=date_formats),
+                    end=normalize_date(exp.get("end"), date_formats=date_formats),
+                    summary=exp.get("summary"),
                 )
             )
 
-    for education in _as_list(raw_record.get("education")):
-        if isinstance(education, Mapping):
+    # education
+    for edu in _as_list(raw_record.get("education")):
+        if isinstance(edu, Mapping):
             record.education.append(
                 Education(
-                    institution=str(education.get("institution") or "") or None,
-                    degree=str(education.get("degree") or "") or None,
-                    field=str(education.get("field") or "") or None,
-                    end_year=education.get("end_year"),
+                    institution=edu.get("institution"),
+                    degree=edu.get("degree"),
+                    field=edu.get("field"),
+                    end_year=edu.get("end_year"),
                 )
             )
 
     return _apply_provenance(record, source_name)
 
 
+# -----------------------------
+# MERGE LOGIC
+# -----------------------------
+
 def _merge_record(
-    existing: CandidateRecord, incoming: CandidateRecord, source_name: str
+    existing: CandidateRecord,
+    incoming: CandidateRecord,
+    source: str,
 ) -> CandidateRecord:
-    # candidate_id
+
+    # ID
     if incoming.candidate_id and not existing.candidate_id:
         existing.candidate_id = incoming.candidate_id
-        _append_provenance(existing, "candidate_id", source_name, "merge")
-    elif incoming.candidate_id and existing.candidate_id:
-        if incoming.candidate_id == existing.candidate_id:
-            _append_provenance(existing, "candidate_id", source_name, "agreement")
-        else:
-            _append_provenance(existing, "candidate_id", source_name, "conflict")
+        _append_provenance(existing, "candidate_id", source, "merge")
 
-    # full_name
+    elif incoming.candidate_id and existing.candidate_id:
+        method = "agreement" if incoming.candidate_id == existing.candidate_id else "conflict"
+        _append_provenance(existing, "candidate_id", source, method)
+
+    # name
     if incoming.full_name and not existing.full_name:
         existing.full_name = incoming.full_name
-        _append_provenance(existing, "full_name", source_name, "merge")
+        _append_provenance(existing, "full_name", source, "merge")
+
     elif incoming.full_name and existing.full_name:
-        if incoming.full_name.lower() == existing.full_name.lower():
-            _append_provenance(existing, "full_name", source_name, "agreement")
-        else:
-            _append_provenance(existing, "full_name", source_name, "conflict")
+        method = "agreement" if incoming.full_name.lower() == existing.full_name.lower() else "conflict"
+        _append_provenance(existing, "full_name", source, method)
 
     # emails
-    if incoming.emails and existing.emails:
-        common_emails = set(existing.emails) & set(incoming.emails)
-        for _ in common_emails:
-            _append_provenance(existing, "emails", source_name, "agreement")
-        if not common_emails:
-            _append_provenance(existing, "emails", source_name, "conflict")
     new_emails = [e for e in incoming.emails if e not in existing.emails]
     if new_emails:
         existing.emails = _merge_unique_strings(existing.emails, new_emails)
-        _append_provenance(existing, "emails", source_name, "merge")
+        _append_provenance(existing, "emails", source, "merge")
 
     # phones
-    if incoming.phones and existing.phones:
-        common_phones = set(existing.phones) & set(incoming.phones)
-        for _ in common_phones:
-            _append_provenance(existing, "phones", source_name, "agreement")
-        if not common_phones:
-            _append_provenance(existing, "phones", source_name, "conflict")
     new_phones = [p for p in incoming.phones if p not in existing.phones]
     if new_phones:
         existing.phones = _merge_unique_strings(existing.phones, new_phones)
-        _append_provenance(existing, "phones", source_name, "merge")
+        _append_provenance(existing, "phones", source, "merge")
 
-    # location.city
-    if incoming.location.city and not existing.location.city:
-        existing.location.city = incoming.location.city
-        _append_provenance(existing, "location.city", source_name, "merge")
-    elif incoming.location.city and existing.location.city:
-        if incoming.location.city.lower() == existing.location.city.lower():
-            _append_provenance(existing, "location.city", source_name, "agreement")
-        else:
-            _append_provenance(existing, "location.city", source_name, "conflict")
-
-    # location.region
-    if incoming.location.region and not existing.location.region:
-        existing.location.region = incoming.location.region
-        _append_provenance(existing, "location.region", source_name, "merge")
-    elif incoming.location.region and existing.location.region:
-        if incoming.location.region.lower() == existing.location.region.lower():
-            _append_provenance(existing, "location.region", source_name, "agreement")
-        else:
-            _append_provenance(existing, "location.region", source_name, "conflict")
-
-    # location.country
-    if incoming.location.country and not existing.location.country:
-        existing.location.country = incoming.location.country
-        _append_provenance(existing, "location.country", source_name, "merge")
-    elif incoming.location.country and existing.location.country:
-        if incoming.location.country.lower() == existing.location.country.lower():
-            _append_provenance(existing, "location.country", source_name, "agreement")
-        else:
-            _append_provenance(existing, "location.country", source_name, "conflict")
+    # location (granular)
+    _merge_location(existing, incoming, source)
 
     # links
-    for link_type in ["linkedin", "github", "portfolio"]:
-        incoming_link = getattr(incoming.links, link_type)
-        existing_link = getattr(existing.links, link_type)
-        if incoming_link and not existing_link:
-            setattr(existing.links, link_type, incoming_link)
-            _append_provenance(existing, f"links.{link_type}", source_name, "merge")
-        elif incoming_link and existing_link:
-            if incoming_link.lower() == existing_link.lower():
-                _append_provenance(existing, f"links.{link_type}", source_name, "agreement")
-            else:
-                _append_provenance(existing, f"links.{link_type}", source_name, "conflict")
+    for f in ["linkedin", "github", "portfolio"]:
+        inc = getattr(incoming.links, f)
+        exc = getattr(existing.links, f)
+
+        if inc and not exc:
+            setattr(existing.links, f, inc)
+            _append_provenance(existing, f"links.{f}", source, "merge")
+
+        elif inc and exc:
+            method = "agreement" if inc.lower() == exc.lower() else "conflict"
+            _append_provenance(existing, f"links.{f}", source, method)
 
     if incoming.links.other:
         existing.links.other = _merge_unique_strings(existing.links.other, incoming.links.other)
-        if existing.links.other != [*existing.links.other]:
-            _append_provenance(existing, "links.other", source_name, "merge")
 
     # headline
     if incoming.headline and not existing.headline:
         existing.headline = incoming.headline
-        _append_provenance(existing, "headline", source_name, "merge")
-    elif incoming.headline and existing.headline:
-        if incoming.headline.lower() == existing.headline.lower():
-            _append_provenance(existing, "headline", source_name, "agreement")
-        else:
-            _append_provenance(existing, "headline", source_name, "conflict")
+        _append_provenance(existing, "headline", source, "merge")
 
-    # years_experience
-    if incoming.years_experience is not None and existing.years_experience is None:
-        existing.years_experience = incoming.years_experience
-        _append_provenance(existing, "years_experience", source_name, "merge")
-    elif incoming.years_experience is not None and existing.years_experience is not None:
-        if incoming.years_experience == existing.years_experience:
-            _append_provenance(existing, "years_experience", source_name, "agreement")
-        else:
-            _append_provenance(existing, "years_experience", source_name, "conflict")
-
-    # skills
-    if incoming.skills:
-        existing.skills = _merge_skills(existing.skills, incoming.skills, source_name)
-        if existing.skills and incoming.skills:
-            _append_provenance(existing, "skills", source_name, "merge")
-
-    # experience
+    # experience / education / skills
     if incoming.experience:
-        existing.experience.extend(
-            [item for item in incoming.experience if item not in existing.experience]
-        )
-        if existing.experience:
-            _append_provenance(existing, "experience", source_name, "merge")
+        existing.experience.extend(incoming.experience)
+        _append_provenance(existing, "experience", source, "merge")
 
-    # education
     if incoming.education:
-        existing.education.extend(
-            [item for item in incoming.education if item not in existing.education]
-        )
-        if existing.education:
-            _append_provenance(existing, "education", source_name, "merge")
+        existing.education.extend(incoming.education)
+        _append_provenance(existing, "education", source, "merge")
+
+    if incoming.skills:
+        existing.skills = _merge_skills(existing.skills, incoming.skills, source)
+        _append_provenance(existing, "skills", source, "merge")
 
     return existing
 
 
+# -----------------------------
+# LOCATION FIX (IMPORTANT)
+# -----------------------------
+
+def _merge_location(existing: CandidateRecord, incoming: CandidateRecord, source: str) -> None:
+
+    for field in ["city", "region", "country"]:
+        inc = getattr(incoming.location, field)
+        exc = getattr(existing.location, field)
+
+        if inc and not exc:
+            setattr(existing.location, field, inc)
+            _append_provenance(existing, f"location.{field}", source, "merge")
+
+        elif inc and exc:
+            method = "agreement" if str(inc).lower() == str(exc).lower() else "conflict"
+            _append_provenance(existing, f"location.{field}", source, method)
+
+
+# -----------------------------
+# PROVENANCE
+# -----------------------------
+
 def _apply_provenance(record: CandidateRecord, source_name: str) -> CandidateRecord:
+    def has_value(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, (list, tuple, dict)):
+            return len(value) > 0
+        return True  # includes 0.0, False-safe fix
+
+    # scalar fields
     if record.candidate_id:
         _append_provenance(record, "candidate_id", source_name, "source")
+
     if record.full_name:
         _append_provenance(record, "full_name", source_name, "source")
+
     if record.emails:
         _append_provenance(record, "emails", source_name, "source")
+
     if record.phones:
         _append_provenance(record, "phones", source_name, "source")
-    if record.location.city or record.location.region or record.location.country:
+
+    # FIX: location must always count if ANY subfield exists
+    if (
+        has_value(record.location.city)
+        or has_value(record.location.region)
+        or has_value(record.location.country)
+    ):
         _append_provenance(record, "location", source_name, "source")
-    if record.links.linkedin or record.links.github or record.links.portfolio or record.links.other:
+
+    if (
+        record.links.linkedin
+        or record.links.github
+        or record.links.portfolio
+        or record.links.other
+    ):
         _append_provenance(record, "links", source_name, "source")
+
     if record.headline:
         _append_provenance(record, "headline", source_name, "source")
+
+    # FIX: THIS is your failing case
     if record.years_experience is not None:
         _append_provenance(record, "years_experience", source_name, "source")
+
     if record.skills:
         _append_provenance(record, "skills", source_name, "source")
+
     if record.experience:
         _append_provenance(record, "experience", source_name, "source")
+
     if record.education:
         _append_provenance(record, "education", source_name, "source")
+
     return record
 
 
-def _append_provenance(record: CandidateRecord, field: str, source_name: str, method: str) -> None:
-    record.provenance.append(Provenance(field=field, source=source_name, method=method))
+# -----------------------------
+# HELPERS
+# -----------------------------
+
+def _append_provenance(record: CandidateRecord, field: str, source: str, method: str) -> None:
+    record.provenance.append(Provenance(field=field, source=source, method=method))
 
 
 def _merge_unique_strings(existing: list[str], incoming: list[str]) -> list[str]:
-    combined = [item for item in existing if item]
     for item in incoming:
-        if item and item not in combined:
-            combined.append(item)
-    return combined
+        if item and item not in existing:
+            existing.append(item)
+    return existing
 
 
-def _merge_skills(existing: list[Skill], incoming: list[Skill], source_name: str) -> list[Skill]:
-    combined = {skill.name.lower(): skill for skill in existing}
-    for skill in incoming:
-        normalized_name = skill.name.strip()
-        key = normalized_name.lower()
+def _merge_skills(existing: list[Skill], incoming: list[Skill], source: str) -> list[Skill]:
+    combined = {s.name.lower(): s for s in existing}
+
+    for s in incoming:
+        key = s.name.lower()
         if key in combined:
-            existing_skill = combined[key]
-            existing_skill.confidence = max(existing_skill.confidence, skill.confidence)
-            existing_skill.sources = _merge_unique_strings(existing_skill.sources, [source_name])
-            continue
-        combined[key] = Skill(
-            name=normalized_name,
-            confidence=max(skill.confidence, 0.8),
-            sources=[source_name],
-        )
+            combined[key].confidence = max(combined[key].confidence, s.confidence)
+            combined[key].sources = _merge_unique_strings(combined[key].sources, [source])
+        else:
+            combined[key] = Skill(name=s.name, confidence=s.confidence, sources=[source])
+
     return list(combined.values())
 
 
 def _candidate_key(candidate: CandidateRecord) -> str:
     if candidate.emails:
-        return f"email:{candidate.emails[0].lower()}"
+        return f"email:{candidate.emails[0]}"
     if candidate.phones:
         return f"phone:{candidate.phones[0]}"
-    if candidate.links.linkedin:
-        return f"url:{candidate.links.linkedin.lower()}"
-    if candidate.links.github:
-        return f"url:{candidate.links.github.lower()}"
-    if candidate.links.portfolio:
-        return f"url:{candidate.links.portfolio.lower()}"
     if candidate.full_name:
-        normalized = normalize_name(candidate.full_name)
-        normalized_name = normalized.lower() if normalized else ""
-        if candidate.experience and candidate.experience[0].company:
-            company = normalize_name(candidate.experience[0].company)
-            company_name = company.lower() if company else ""
-            return f"name-company:{normalized_name}|{company_name}"
-        return f"name:{normalized_name}"
+        return f"name:{normalize_name(candidate.full_name).lower()}"
     return "unknown"
 
 
-# country normalization is handled by candidate_transformer.normalizers.country.normalize_country
-
-
 def _canonical_skill_name(value: str) -> str:
-    cleaned = value.strip()
-    if not cleaned:
-        return cleaned
-    lowered = cleaned.lower()
-    if lowered in SKILL_ALIASES:
-        return SKILL_ALIASES[lowered]
-    return cleaned
+    v = value.strip().lower()
+    return SKILL_ALIASES.get(v, value.strip())
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -420,3 +426,5 @@ def _as_list(value: Any) -> list[Any]:
     if isinstance(value, tuple):
         return list(value)
     return [value]
+
+

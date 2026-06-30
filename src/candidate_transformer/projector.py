@@ -112,10 +112,10 @@ def _resolve_field(record: CandidateRecord, field_name: str) -> Any:
             for item in base_val:
                 if isinstance(item, dict) and rest in item:
                     res.append(item[rest])
-                elif hasattr(item, "dict") and rest in getattr(item, "dict")():
-                    res.append(getattr(item, "dict")()[rest])
-                elif hasattr(item, "model_dump") and rest in getattr(item, "model_dump")():
-                    res.append(getattr(item, "model_dump")()[rest])
+                elif hasattr(item, "dict") and rest in item.dict():
+                    res.append(item.dict()[rest])
+                elif hasattr(item, "model_dump") and rest in item.model_dump():
+                    res.append(item.model_dump()[rest])
                 elif hasattr(item, rest):
                     res.append(getattr(item, rest))
                 else:

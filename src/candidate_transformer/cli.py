@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import sys
-import typer
 from pathlib import Path
+
+import typer
 
 from candidate_transformer.pipeline import run_pipeline
 

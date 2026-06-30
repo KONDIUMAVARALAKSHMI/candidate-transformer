@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from candidate_transformer.projector import ProjectionConfig, project_record
 from candidate_transformer.schemas import CandidateRecord, Skill

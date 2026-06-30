@@ -1,9 +1,8 @@
-import pytest
 
 from candidate_transformer.confidence import (
+    apply_confidence,
     compute_field_confidences,
     compute_overall_confidence,
-    apply_confidence,
 )
 from candidate_transformer.schemas import CandidateRecord, Provenance, Skill
 
